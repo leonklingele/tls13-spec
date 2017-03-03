@@ -1229,7 +1229,7 @@ the protocol does not interpret, while Data is three consecutive Datum,
 consuming a total of nine bytes.
 
        opaque Datum[3];      /* three uninterpreted bytes */
-       Datum Data[9];        /* 3 consecutive 3 byte vectors */
+       Datum Data[9];        /* 3 consecutive 3-byte vectors */
 
 Variable-length vectors are defined by specifying a subrange of legal lengths,
 inclusively, using the notation \<floor..ceiling\>. When these are encoded, the
@@ -1296,7 +1296,7 @@ One may optionally specify a value without its associated tag to force the
 width definition without defining a superfluous element.
 
 In the following example, Taste will consume two bytes in the data stream but
-can only assume the values 1, 2, or 4 in current version of protocol.
+can only assume the values 1, 2, or 4 in current versions of the protocol.
 
        enum { sweet(1), sour(2), bitter(4), (32000) } Taste;
 
@@ -2723,8 +2723,8 @@ extensions
 
 ###  Certificate Request
 
-A server which is authenticating with a certificate can optionally
-request a certificate from the client. This message, if sent, will
+A server which is authenticating with a certificate MAY optionally
+request a certificate from the client. This message, if sent, MUST
 follow EncryptedExtensions.
 
 Structure of this message:
@@ -2839,7 +2839,7 @@ The computations for the Authentication messages all uniformly
 take the following inputs:
 
 - The certificate and signing key to be used.
-- A Handshake Context based on the transcript of the handshake messages
+- A Handshake Context based on the transcript of the handshake messages.
 - A base key to be used to compute a MAC key.
 
 Based on these inputs, the messages then contain:
@@ -2850,7 +2850,7 @@ supporting certificates in the chain. Note that certificate-based
 client authentication is not available in the 0-RTT case.
 
 CertificateVerify
-: A signature over the value Hash(Handshake Context + Certificate)
+: A signature over the value Hash(Handshake Context + Certificate).
 
 Finished
 : A MAC over the value Hash(Handshake Context + Certificate + CertificateVerify)
@@ -2960,7 +2960,7 @@ The body of the "status_request" extension
 from the server MUST be a CertificateStatus structure as defined
 in {{RFC6066}}.
 
-A server may also request that a client present OCSP response with its
+A server MAY request that a client presents an OCSP response with its
 certificate by sending a "status_request" extension in its CertificateRequest
 message. If the client opts to send an OCSP response, the body of its
 "status_request" extension MUST be a CertificateStatus structure as
@@ -3020,7 +3020,7 @@ The following rules apply to certificates sent by the client:
 - The certificate type MUST be X.509v3 {{RFC5280}}, unless explicitly negotiated
   otherwise (e.g., {{RFC5081}}).
 
-- If the certificate_authorities list in the certificate request
+- If the certificate_authorities list in the CertificateRequest
   message was non-empty, at least one of the certificates in the certificate
   chain SHOULD be issued by one of the listed CAs.
 
@@ -3029,7 +3029,7 @@ The following rules apply to certificates sent by the client:
   relaxes the constraints on certificate-signing algorithms found in
   prior versions of TLS.
 
-- If the certificate_extensions list in the certificate request message
+- If the certificate_extensions list in the CertificateRequest message
   was non-empty, the end-entity certificate MUST match the extension OIDs
   recognized by the client, as described in {{certificate-request}}.
 
@@ -3050,7 +3050,8 @@ the server MAY at its discretion either continue the handshake without client
 authentication, or abort the handshake with a "certificate_required" alert. Also, if some
 aspect of the certificate chain was unacceptable (e.g., it was not signed by a
 known, trusted CA), the server MAY at its discretion either continue the
-handshake (considering the client unauthenticated) or abort the handshake.
+handshake (considering the client unauthenticated) or abort the handshake
+with a "bad_certificate" alert.
 
 Any endpoint receiving any certificate signed using any signature algorithm
 using an MD5 hash MUST abort the handshake with a "bad_certificate" alert.
@@ -3075,7 +3076,7 @@ and also provides integrity for the handshake up
 to this point. Servers MUST send this message when
 authenticating via a certificate.
 Clients MUST send this
-message whenever authenticating via a Certificate (i.e., when
+message whenever authenticating via a certificate (i.e., when
 the Certificate message is non-empty). When sent, this message MUST appear immediately
 after the Certificate message and immediately prior to the Finished
 message.
@@ -3101,13 +3102,13 @@ The digital signature is then computed over the concatenation of:
 
 - A string that consists of octet 32 (0x20) repeated 64 times
 - The context string
-- A single 0 byte which serves as the separator
+- A single 0-byte which serves as the separator
 - The content to be signed
 
 This structure is intended to prevent an attack on previous versions
 of TLS in which the ServerKeyExchange format meant that
 attackers could obtain a signature of a message with a chosen 32-byte
-prefix (ClientHello.random). The initial 64 byte pad clears that prefix
+prefix (ClientHello.random). The initial 64-byte pad clears that prefix
 along with the server-controlled ServerHello.random.
 
 The context string for a server signature is
@@ -3156,7 +3157,7 @@ verification process takes as input:
 
 - The content covered by the digital signature
 - The public key contained in the end-entity certificate found in the
-  associated Certificate message.
+  associated Certificate message
 - The digital signature received in the signature field of the
   CertificateVerify message
 
@@ -3190,8 +3191,8 @@ receive application data over the connection.
 Early data may be sent prior to the receipt of the peer's Finished
 message, per {{early-data-indication}}.
 
-The key used to compute the finished message is computed from the
-Base key defined in {{authentication-messages}} using HKDF (see
+The key used to compute the Finished message is computed from the
+Base Key defined in {{authentication-messages}} using HKDF (see
 {{key-schedule}}). Specifically:
 
 ~~~
@@ -3222,14 +3223,14 @@ As noted above, the HMAC input can generally be implemented by a running
 hash, i.e., just the handshake hash at this point.
 
 In previous versions of TLS, the verify_data was always 12 octets long. In
-the current version of TLS, it is the size of the HMAC output for the
+TLS 1.3, it is the size of the HMAC output for the
 Hash used for the handshake.
 
 Note: Alerts and any other record types are not handshake messages
 and are not included in the hash computations.
 
 Any records following a 1-RTT Finished message MUST be encrypted under the
-appropriate application traffic key {{updating-traffic-keys}}.
+appropriate application traffic key as described in {{updating-traffic-keys}}.
 In particular, this includes any alerts sent by the
 server in response to client Certificate and CertificateVerify messages.
 
@@ -3278,8 +3279,8 @@ connection, as described in Section 3 of {{RFC6066}}.
 Note: Although the resumption master secret depends on the client's second
 flight, servers which do not request client authentication MAY compute
 the remainder of the transcript independently and then send a
-NewSessionTicket immediately upon sending its Finished rather than
-waiting for the client Finished.  This might be appropriate in cases
+NewSessionTicket immediately upon sending the Finished message rather than
+waiting for the client's Finished message.  This might be appropriate in cases
 where the client is expected to open multiple TLS connections in
 parallel and would benefit from the reduced overhead of a resumption
 handshake, for example.
@@ -3400,7 +3401,7 @@ the forward secrecy of data sent before the sender changed keys.
 
 If implementations independently send their own KeyUpdates with
 request_update set to "update_requested", and they cross in flight, then each side
-will also send a response, with the result that each side increments
+MUST also send a response, with the result that each side increments
 by two generations.
 
 Both sender and receiver MUST encrypt their KeyUpdate
@@ -4609,7 +4610,7 @@ TLS protocol issues:
   multiple TLS records (see {{record-layer}})? Including corner cases
   like a ClientHello that is split to several small fragments? Do
   you fragment handshake messages that exceed the maximum fragment
-  size? In particular, the certificate and certificate request
+  size? In particular, the Certificate and CertificateRequest
   handshake messages can be large enough to require fragmentation.
 
 -  Do you ignore the TLS record layer version number in all unencrypted TLS
